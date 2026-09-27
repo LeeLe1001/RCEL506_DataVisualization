@@ -66,24 +66,28 @@ else:
                 labels_info[i]['y'] += push
                 labels_info[i+1]['y'] -= push
 
-    # Render adjusted labels to the right of the lines with connector lines
-    label_x = actual_max + 1.0
+    # Setup a blended transform: x is in axes coordinates (0 to 1), y is in data coordinates
+    trans = ax.get_yaxis_transform()
+
+    # Render adjusted labels completely outside the plot area on the right
     for label in labels_info:
         group = label['group']
         orig_y = label['orig_y']
         adjusted_y = label['y']
         c = color_map[group]
         
-        # Draw thin connector line from the data point to the label anchor
-        ax.plot([actual_max, label_x - 0.2], [orig_y, adjusted_y], color='#999999', linewidth=1.0, alpha=0.6)
+        # Draw thin subtle grey connector line starting at the exact right edge (x=1.0) to the text
+        ax.plot([1.0, 1.02], [orig_y, adjusted_y], color='#999999', linewidth=1.0, alpha=0.6, transform=trans, clip_on=False)
         
-        # Render the label block
-        ax.text(label_x, adjusted_y + 0.002, group, color=c, fontsize=14, fontweight='bold', ha='left', va='bottom')
-        ax.text(label_x, adjusted_y - 0.002, rate_ranges[group], color='grey', fontsize=11, alpha=0.8, ha='left', va='top')
+        # Render the label block outside the axes boundary (starting at x=1.03)
+        ax.text(1.03, adjusted_y + 0.002, group, color=c, fontsize=14, fontweight='bold', ha='left', va='bottom', transform=trans, clip_on=False)
+        ax.text(1.03, adjusted_y - 0.002, rate_ranges[group], color='grey', fontsize=11, alpha=0.8, ha='left', va='top', transform=trans, clip_on=False)
 
-    # Dynamically extend x-axis to make room for labels and connector lines
-    x_padding = max(4.0, (actual_max - actual_min) * 0.35)
-    ax.set_xlim(actual_min, actual_max + x_padding)
+    # Restrict the x-axis strictly to the data boundaries without extending it
+    ax.set_xlim(actual_min, actual_max)
+    
+    # Adjust figure layout directly to allocate space for external labels without cropping
+    plt.subplots_adjust(right=0.7)
 
     ax.set_title('Yield Rate at U.S. Colleges, by Selectivity', fontweight='bold', fontsize=20, loc='left', pad=45)
     ax.text(0, 1.05, 'The yield rate is the percentage of admitted students choosing to enroll.', 
@@ -101,6 +105,5 @@ else:
     ax.spines['right'].set_visible(False)
 
     plt.xlabel('Year', fontsize=12)
-    plt.tight_layout()
     
     st.pyplot(fig)
