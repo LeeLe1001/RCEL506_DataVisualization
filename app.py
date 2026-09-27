@@ -53,6 +53,9 @@ else:
             final_y = df_filtered.loc[actual_max, group]
             labels_info.append({'group': group, 'y': final_y})
             
+    # Sort labels strictly by their final y-value (descending order)
+    labels_info.sort(key=lambda x: x['y'], reverse=True)
+            
     # 1D Vertical repulsion to avoid overlap at the right edge
     min_spacing = 0.04
     for _ in range(15):
