@@ -51,37 +51,38 @@ else:
             
             # Extract the y-value at the absolute right-most visible edge
             final_y = df_filtered.loc[actual_max, group]
-            labels_info.append({'group': group, 'y': final_y})
+            labels_info.append({'group': group, 'orig_y': final_y, 'y': final_y})
             
     # Sort labels strictly by their final y-value (descending order)
-    labels_info.sort(key=lambda x: x['y'], reverse=True)
+    labels_info.sort(key=lambda x: x['orig_y'], reverse=True)
             
-    # 1D Vertical repulsion to avoid overlap at the right edge
-    min_spacing = 0.04
-    for _ in range(15):
-        for i in range(len(labels_info)):
-            for j in range(i + 1, len(labels_info)):
-                diff = labels_info[i]['y'] - labels_info[j]['y']
-                if abs(diff) < min_spacing:
-                    push = (min_spacing - abs(diff)) / 2
-                    if diff > 0:
-                        labels_info[i]['y'] += push
-                        labels_info[j]['y'] -= push
-                    else:
-                        labels_info[i]['y'] -= push
-                        labels_info[j]['y'] += push
+    # 1D Vertical repulsion to avoid overlap while preserving sorted order
+    min_spacing = 0.045
+    for _ in range(20):
+        for i in range(len(labels_info) - 1):
+            diff = labels_info[i]['y'] - labels_info[i+1]['y']
+            if diff < min_spacing:
+                push = (min_spacing - diff) / 2
+                labels_info[i]['y'] += push
+                labels_info[i+1]['y'] -= push
 
-    # Render adjusted labels to the right of the lines
-    label_x = actual_max + 0.5
+    # Render adjusted labels to the right of the lines with connector lines
+    label_x = actual_max + 1.0
     for label in labels_info:
         group = label['group']
+        orig_y = label['orig_y']
         adjusted_y = label['y']
+        c = color_map[group]
         
-        ax.text(label_x, adjusted_y + 0.004, group, color=color_map[group], fontsize=14, fontweight='bold', ha='left', va='bottom')
-        ax.text(label_x, adjusted_y - 0.004, rate_ranges[group], color='grey', fontsize=11, alpha=0.8, ha='left', va='top')
+        # Draw thin connector line from the data point to the label anchor
+        ax.plot([actual_max, label_x - 0.2], [orig_y, adjusted_y], color=c, linewidth=1.0, alpha=0.6)
+        
+        # Render the label block
+        ax.text(label_x, adjusted_y + 0.002, group, color=c, fontsize=14, fontweight='bold', ha='left', va='bottom')
+        ax.text(label_x, adjusted_y - 0.002, rate_ranges[group], color='grey', fontsize=11, alpha=0.8, ha='left', va='top')
 
-    # Dynamically extend x-axis to make room for labels
-    x_padding = max(3, (actual_max - actual_min) * 0.25)
+    # Dynamically extend x-axis to make room for labels and connector lines
+    x_padding = max(4.0, (actual_max - actual_min) * 0.35)
     ax.set_xlim(actual_min, actual_max + x_padding)
 
     ax.set_title('Yield Rate at U.S. Colleges, by Selectivity', fontweight='bold', fontsize=20, loc='left', pad=45)
