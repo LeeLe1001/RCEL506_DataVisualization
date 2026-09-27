@@ -26,14 +26,6 @@ rate_ranges = {
     'Much Less Selective': '>80% admissions rate'
 }
 
-relative_x_positions = {
-    'Elite': 0.85,
-    'Selective': 0.60,
-    'Somewhat Selective': 0.20,
-    'Less Selective': 0.45,
-    'Much Less Selective': 0.75
-}
-
 groups = ['Elite', 'Selective', 'Somewhat Selective', 'Less Selective', 'Much Less Selective']
 selected_groups = st.multiselect("Select Selectivity Groups:", groups, default=groups)
 
@@ -49,60 +41,45 @@ else:
 
     fig, ax = plt.subplots(figsize=(10, 10))
     
-    # Pre-calculate initial label positions
     labels_info = []
+    actual_max = df_filtered.index.max()
+    actual_min = df_filtered.index.min()
+    
     for group in selected_groups:
         if group in df_filtered.columns:
             ax.plot(df_filtered.index, df_filtered[group], linewidth=2.5, color=color_map[group])
             
-            range_span = max_year - min_year
-            target_x = min_year if range_span == 0 else min_year + (range_span * relative_x_positions[group])
+            # Extract the y-value at the absolute right-most visible edge
+            final_y = df_filtered.loc[actual_max, group]
+            labels_info.append({'group': group, 'y': final_y})
             
-            dynamic_x = min(df_filtered.index, key=lambda x: abs(x - target_x))
-            dynamic_y = df_filtered.loc[dynamic_x, group]
-            
-            labels_info.append({
-                'group': group,
-                'x': dynamic_x,
-                'y': dynamic_y,
-                'orig_y': dynamic_y
-            })
-            
-    # Iterative 2D repulsion to avoid overlap while staying close to the line
-    min_y_spacing = 0.03
-    max_x_proximity = 3  # Only repel if labels are within 3 years of each other
-    max_y_displacement = 0.025  # Maximum drift allowed from the original line
-    
+    # 1D Vertical repulsion to avoid overlap at the right edge
+    min_spacing = 0.04
     for _ in range(15):
         for i in range(len(labels_info)):
             for j in range(i + 1, len(labels_info)):
-                x_diff = abs(labels_info[i]['x'] - labels_info[j]['x'])
-                y_diff = labels_info[i]['y'] - labels_info[j]['y']
-                
-                if x_diff <= max_x_proximity and abs(y_diff) < min_y_spacing:
-                    push = (min_y_spacing - abs(y_diff)) / 2
-                    if y_diff > 0:
+                diff = labels_info[i]['y'] - labels_info[j]['y']
+                if abs(diff) < min_spacing:
+                    push = (min_spacing - abs(diff)) / 2
+                    if diff > 0:
                         labels_info[i]['y'] += push
                         labels_info[j]['y'] -= push
                     else:
                         labels_info[i]['y'] -= push
                         labels_info[j]['y'] += push
-                        
-    # Clamp final positions to ensure they haven't drifted too far from the line
-    for label in labels_info:
-        if label['y'] > label['orig_y'] + max_y_displacement:
-            label['y'] = label['orig_y'] + max_y_displacement
-        elif label['y'] < label['orig_y'] - max_y_displacement:
-            label['y'] = label['orig_y'] - max_y_displacement
 
-    # Render adjusted labels
+    # Render adjusted labels to the right of the lines
+    label_x = actual_max + 0.5
     for label in labels_info:
         group = label['group']
         adjusted_y = label['y']
-        dynamic_x = label['x']
         
-        ax.text(dynamic_x, adjusted_y + 0.008, group, color=color_map[group], fontsize=15, fontweight='bold', ha='center')
-        ax.text(dynamic_x, adjusted_y - 0.015, rate_ranges[group], color='grey', fontsize=12, alpha=0.8, ha='center')
+        ax.text(label_x, adjusted_y + 0.004, group, color=color_map[group], fontsize=14, fontweight='bold', ha='left', va='bottom')
+        ax.text(label_x, adjusted_y - 0.004, rate_ranges[group], color='grey', fontsize=11, alpha=0.8, ha='left', va='top')
+
+    # Dynamically extend x-axis to make room for labels
+    x_padding = max(3, (actual_max - actual_min) * 0.25)
+    ax.set_xlim(actual_min, actual_max + x_padding)
 
     ax.set_title('Yield Rate at U.S. Colleges, by Selectivity', fontweight='bold', fontsize=20, loc='left', pad=45)
     ax.text(0, 1.05, 'The yield rate is the percentage of admitted students choosing to enroll.', 
