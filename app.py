@@ -30,13 +30,12 @@ rate_ranges = {
     'Much Less Selective': '>80% admissions rate'
 }
 
-# Original preferred x-coordinates for labels
-ideal_x_positions = {
-    'Elite': 2018,
-    'Selective': 2014,
-    'Somewhat Selective': 2005,
-    'Less Selective': 2013,
-    'Much Less Selective': 2017
+label_positions = {
+    'Elite': (2019, 0.46),
+    'Selective': (2014, 0.335),
+    'Somewhat Selective': (2007, 0.285),
+    'Less Selective': (2013, 0.250),
+    'Much Less Selective': (2017, 0.195)
 }
 
 # 1. Interactive Controls
