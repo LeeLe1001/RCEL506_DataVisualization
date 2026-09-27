@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 
 st.set_page_config(page_title="Yield Rate at U.S. Colleges", layout="centered")
 
@@ -39,7 +40,11 @@ else:
     mask = (weighted_yield.index >= min_year) & (weighted_yield.index <= max_year)
     df_filtered = weighted_yield[mask]
 
-    fig, ax = plt.subplots(figsize=(10, 10))
+    # Expanded figure width to 14 to allocate space for external labels
+    fig, ax = plt.subplots(figsize=(14, 10))
+    
+    # Enforce strict 1:1 aspect ratio for the actual plot area
+    ax.set_box_aspect(1)
     
     labels_info = []
     actual_max = df_filtered.index.max()
@@ -99,6 +104,9 @@ else:
     ax.grid(axis='y', linestyle='--', alpha=0.5)
 
     ax.set_yticklabels([f'{int(y*100)}%' for y in ax.get_yticks()], fontsize=11)
+    
+    # Force integer ticks on the x-axis to prevent decimal years
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.tick_params(axis='x', labelsize=11)
 
     ax.spines['top'].set_visible(False)
