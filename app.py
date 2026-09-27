@@ -75,7 +75,7 @@ else:
         c = color_map[group]
         
         # Draw thin connector line from the data point to the label anchor
-        ax.plot([actual_max, label_x - 0.2], [orig_y, adjusted_y], color=c, linewidth=1.0, alpha=0.6)
+        ax.plot([actual_max, label_x - 0.2], [orig_y, adjusted_y], color='#999999', linewidth=1.0, alpha=0.6)
         
         # Render the label block
         ax.text(label_x, adjusted_y + 0.002, group, color=c, fontsize=14, fontweight='bold', ha='left', va='bottom')
